@@ -5,6 +5,7 @@ from utils import mnist_reader
 import torch
 import torch.nn as nn
 import numpy as np
+import matplotlib.pyplot as plt
 
 X_train, y_train = mnist_reader.load_mnist('data/fashion', kind='train')
 X_test, y_test = mnist_reader.load_mnist('data/fashion', kind='t10k')
@@ -114,6 +115,5 @@ with torch.no_grad():
     result = model(dataset)
     result = result.detach().cpu().numpy() * x_std +x_mean
 
-import matplotlib.pyplot as plt
 plt.imshow(result[0].reshape([28, 28]))
 
