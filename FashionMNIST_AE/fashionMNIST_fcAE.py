@@ -17,6 +17,9 @@ def main():
     X_train, y_train = mnist_reader.load_mnist('data/fashion', kind='train')
     X_test, y_test = mnist_reader.load_mnist('data/fashion', kind='t10k')
 
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    print(device)
+
     print(X_train.shape)
     print(y_train.shape)
     print(X_test.shape)
@@ -27,21 +30,21 @@ def main():
 
     latent_dim = 8
     model = Autoencoder(latent=latent_dim)
+    model.to(device)
     model_param = model.parameters()
     optimizer = torch.optim.Adam(filter(lambda x: x.requires_grad, model_param), lr=0.0001)
     criterion = nn.MSELoss()
     dataset = torch.from_numpy(X_train)
     dataset_norm = (dataset-torch.mean(dataset))/torch.std(dataset)
 
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    training(model, dataset_norm, optimizer, criterion, latent_dim=latent_dim,  Epochs=10, batch_size=1024, device=device)
+    training(model, dataset_norm, optimizer, criterion, latent_dim=latent_dim,  Epochs=100, batch_size=1024, device=device)
 
     with torch.no_grad():
-        result = model(dataset)
-        result = result.detach().cpu().numpy() * x_std +x_mean
+        result = model(dataset.to(device))
+        result = result.detach().cpu().numpy() * x_std + x_mean
 
     plt.imshow(result[0].reshape([28, 28]))
-    plt.show()
+    #plt.show()
 
 
 class Autoencoder(nn.Module):
@@ -116,6 +119,8 @@ def training(model: Autoencoder,
     - Epochs (int): The number of epochs to train the autoencoder for.
     - batch_size (int, optional): The size of the batches to use during training. Defaults to 1000.
     - device (str, optional): The device to use during training (e.g. 'cpu', 'cuda'). Defaults to 'cpu'.
+    - early_stop_patience (int, optional): Number of epochs to wait without improvement before stopping
+    - validation_split: (float, optional): Fraction of the data to use for validation.
 
     Returns:
     - train_loss (list of float): The list of training losses for each epoch of training.
@@ -123,7 +128,7 @@ def training(model: Autoencoder,
 
     train_loss = []
     best_loss = 1e10
-    dataset = shuffle_data(dataset)
+    dataset = shuffle_data(dataset).to(device)
 
     data_size = dataset.shape[0]
     batches = data_size//batch_size
@@ -139,7 +144,7 @@ def training(model: Autoencoder,
 
             optimizer.zero_grad()
             # print(data)
-            outputs = model(data)
+            outputs = model(data).to(device)
             loss = criterion(outputs, data)
             # print(loss)
             loss.backward()
