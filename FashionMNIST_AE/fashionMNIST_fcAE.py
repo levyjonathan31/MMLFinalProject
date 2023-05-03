@@ -10,6 +10,7 @@ from torch.optim import Adam
 
 import numpy as np
 import matplotlib.pyplot as plt
+import time
 
 
 def main():
@@ -37,14 +38,27 @@ def main():
     dataset = torch.from_numpy(X_train)
     dataset_norm = (dataset-torch.mean(dataset))/torch.std(dataset)
 
-    training(model, dataset_norm, optimizer, criterion, latent_dim=latent_dim,  Epochs=100, batch_size=1024, device=device)
+    # Training variables
+    epochs = 100
+    batch_size = 1024
+
+    start_time = time.time()
+    best_loss = training(model, dataset_norm, optimizer, criterion, latent_dim=latent_dim,  Epochs=epochs, batch_size=batch_size, device=device)
+    time_taken = time.time() - start_time
+
+    with open('result.txt', 'a') as file:
+        file.write(time.strftime("%H:%M:%S", time.gmtime()))
+        file.write(f"\nBest Loss: {best_loss:.6f} found in {time_taken:.6f}ms.")
+        file.write(f"\nDetails:\n\t- epochs: {epochs}\n\t- batch_size: {batch_size}\n\t- device: {device}")
+        file.write("\n\n")
 
     with torch.no_grad():
         result = model(dataset.to(device))
         result = result.detach().cpu().numpy() * x_std + x_mean
 
-    plt.imshow(result[0].reshape([28, 28]))
-    #plt.show()
+    print(len(result))
+    plt.imshow(result[5].reshape([28, 28]))
+    # plt.show()
 
 
 class Autoencoder(nn.Module):
@@ -163,10 +177,9 @@ def training(model: Autoencoder,
             #torch.save(model.state_dict(), './results/AE/v2_{}/model/AE_loge_allplanes_latent{}_best_parameters.pt'.format(timestep, latent_dim))
             best_loss = loss
             print('best loss: ', best_loss)
-            
-    print('final best loss: ', best_loss)
 
-    return train_loss
+
+    return best_loss
 
 
 main()

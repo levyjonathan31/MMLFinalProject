@@ -1,0 +1,7 @@
+22:50:06
+Best Loss: 0.137228 found in 11.894864ms.
+Details:
+	- epochs: 100
+	- batch_size: 1024
+	- device: cuda
+
