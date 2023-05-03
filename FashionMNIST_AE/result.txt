@@ -12,3 +12,17 @@ Details:
 	- batch_size: 1024
 	- device: cuda
 
+23:18:42
+Best Loss: 0.139754 found in 12.271480ms.
+Details:
+	- epochs: 100
+	- batch_size: 1024
+	- device: cuda
+
+23:27:55
+Best Loss: 0.140898 found in 12.161001ms.
+Details:
+	- epochs: 100
+	- batch_size: 1024
+	- device: cuda
+

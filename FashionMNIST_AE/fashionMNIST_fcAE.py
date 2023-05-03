@@ -29,8 +29,7 @@ def main():
     x_std = np.std(X_train)
     x_mean = np.mean(X_train)
 
-    latent_dim = 8
-    model = Autoencoder(latent=latent_dim)
+    model = Autoencoder()
     model.to(device)
     model_param = model.parameters()
     optimizer = torch.optim.Adam(filter(lambda x: x.requires_grad, model_param), lr=0.0001)
@@ -43,7 +42,7 @@ def main():
     batch_size = 1024
 
     start_time = time.time()
-    best_loss = training(model, dataset_norm, optimizer, criterion, latent_dim=latent_dim,  Epochs=epochs, batch_size=batch_size, device=device)
+    best_loss = training(model, dataset_norm, optimizer, criterion,  Epochs=epochs, batch_size=batch_size, device=device)
     time_taken = time.time() - start_time
 
     with open('result.txt', 'a') as file:
@@ -62,19 +61,22 @@ def main():
 
 
 class Autoencoder(nn.Module):
-    def __init__(self, input_dim=784, latent=8):
+    # Modify dimensions here.
+    INPUT_DIM = 784
+    TRANS2_DIM = INPUT_DIM // 2
+    TRANS3_DIM = TRANS2_DIM // 2
+    LATENT_DIM = 8
+
+    def __init__(self):
         super().__init__()
 
-        transf2_dim = input_dim // 2
-        transf3_dim = input_dim // 4
+        self.enc1 = nn.Linear(in_features=self.INPUT_DIM, out_features=self.TRANS2_DIM)
+        self.enc2 = nn.Linear(in_features=self.TRANS2_DIM, out_features=self.TRANS3_DIM)
+        self.enc3 = nn.Linear(in_features=self.TRANS3_DIM, out_features=self.LATENT_DIM)
 
-        self.enc1 = nn.Linear(in_features=input_dim, out_features=transf2_dim)
-        self.enc2 = nn.Linear(in_features=transf2_dim, out_features=transf3_dim)
-        self.enc3 = nn.Linear(in_features=transf3_dim, out_features=latent)
-
-        self.dec1 = nn.Linear(in_features=latent, out_features=transf3_dim)
-        self.dec2 = nn.Linear(in_features=transf3_dim, out_features=transf2_dim)
-        self.dec3 = nn.Linear(in_features=transf2_dim, out_features=input_dim)
+        self.dec1 = nn.Linear(in_features=self.LATENT_DIM, out_features=self.TRANS3_DIM)
+        self.dec2 = nn.Linear(in_features=self.TRANS3_DIM, out_features=self.TRANS2_DIM)
+        self.dec3 = nn.Linear(in_features=self.TRANS2_DIM, out_features=self.INPUT_DIM)
 
         self.encodings = [
             self.enc1,
@@ -126,7 +128,6 @@ def training(model: Autoencoder,
              dataset: Tensor,
              optimizer: Adam,
              criterion: nn.MSELoss,
-             latent_dim: int,
              Epochs: int,
              batch_size: int = 1000,
              device: str = "cpu"):
@@ -139,7 +140,6 @@ def training(model: Autoencoder,
     - dataset (nn.Tensor): The dataset to train the autoencoder on.
     - optimizer (nn.Adam): The optimizer used to adjust the model's parameters during training.
     - criterion (nn.MSELoss): The loss criterion used to evaluate the quality of the autoencoder's output compared to the original data.
-    - latent_dim (int): The size of the latent space in the autoencoder.
     - Epochs (int): The number of epochs to train the autoencoder for.
     - batch_size (int, optional): The size of the batches to use during training. Defaults to 1000.
     - device (str, optional): The device to use during training (e.g. 'cpu', 'cuda'). Defaults to 'cpu'.
@@ -183,7 +183,7 @@ def training(model: Autoencoder,
             print('Epoch {} of {}, Train Loss: {:.6f}'.format(epoch+1, Epochs, running_loss))
 
         if (loss < best_loss) and (epoch % 20 == 0):
-            torch.save(model.state_dict(), './results/latent_{}_best_parameters.pt'.format(latent_dim))
+            torch.save(model.state_dict(), './results/latent_{}_best_parameters.pt'.format(model.LATENT_DIM))
             #torch.save(model.state_dict(), './results/AE/v2_{}/model/AE_loge_allplanes_latent{}_best_parameters.pt'.format(timestep, latent_dim))
             best_loss = loss
             print('best loss: ', best_loss)
