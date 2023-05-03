@@ -45,11 +45,7 @@ def main():
     best_loss = training(model, dataset_norm, optimizer, criterion,  Epochs=epochs, batch_size=batch_size, device=device)
     time_taken = time.time() - start_time
 
-    with open('result.txt', 'a') as file:
-        file.write(time.strftime("%H:%M:%S", time.gmtime()))
-        file.write(f"\nBest Loss: {best_loss:.6f} found in {time_taken:.6f}ms.")
-        file.write(f"\nDetails:\n\t- epochs: {epochs}\n\t- batch_size: {batch_size}\n\t- device: {device}")
-        file.write("\n\n")
+    write_diagnostics(model, best_loss, time_taken, epochs, batch_size, device)
 
     with torch.no_grad():
         result = model(dataset.to(device))
@@ -62,7 +58,7 @@ def main():
 
 class Autoencoder(nn.Module):
     # Modify dimensions here.
-    INPUT_DIM = 784
+    INPUT_DIM = 784  # Do not modify this
     TRANS2_DIM = INPUT_DIM // 2
     TRANS3_DIM = TRANS2_DIM // 2
     LATENT_DIM = 8
@@ -143,8 +139,6 @@ def training(model: Autoencoder,
     - Epochs (int): The number of epochs to train the autoencoder for.
     - batch_size (int, optional): The size of the batches to use during training. Defaults to 1000.
     - device (str, optional): The device to use during training (e.g. 'cpu', 'cuda'). Defaults to 'cpu'.
-    - early_stop_patience (int, optional): Number of epochs to wait without improvement before stopping
-    - validation_split: (float, optional): Fraction of the data to use for validation.
 
     Returns:
     - train_loss (list of float): The list of training losses for each epoch of training.
@@ -190,6 +184,25 @@ def training(model: Autoencoder,
 
 
     return best_loss
+
+
+def write_diagnostics(model, best_loss, time_taken, epochs: int, batch_size: int, device: str):
+    with open('result.txt', 'r+') as file:
+        # Read the contents and store them
+        contents = file.read()
+
+        # Write what we need at the top of the file
+        file.seek(0)
+        file.write(time.strftime("%H:%M:%S", time.gmtime()))
+        file.write(f"\nBest Loss: {best_loss:.6f} found in {time_taken:.6f}ms.\nDetails:")
+        file.write(f"\n\t- epochs: {epochs}")
+        file.write(f"\n\t- batch_size: {batch_size}")
+        file.write(f"\n\t- device: {device}")
+        file.write(f"\n\t- latent size: {model.LATENT_DIM}")
+        file.write("\n\n")
+
+        # Push the stuff that was previously there below the new contents
+        file.write(contents)
 
 
 main()

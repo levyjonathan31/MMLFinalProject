@@ -1,28 +1,32 @@
-22:50:06
-Best Loss: 0.137228 found in 11.894864ms.
+23:43:08
+Best Loss: 0.075958 found in 12.727505ms.
 Details:
 	- epochs: 100
 	- batch_size: 1024
 	- device: cuda
+	- latent size: 195
 
-23:16:44
-Best Loss: 0.140235 found in 12.193000ms.
+23:42:16
+Best Loss: 0.114072 found in 12.293002ms.
 Details:
 	- epochs: 100
 	- batch_size: 1024
 	- device: cuda
+	- latent size: 16
 
-23:18:42
-Best Loss: 0.139754 found in 12.271480ms.
+23:39:03
+Best Loss: 0.114437 found in 12.676000ms.
 Details:
 	- epochs: 100
 	- batch_size: 1024
 	- device: cuda
+	- latent size: 16
 
-23:27:55
-Best Loss: 0.140898 found in 12.161001ms.
+23:40:01
+Best Loss: 0.114779 found in 12.724236ms.
 Details:
 	- epochs: 100
 	- batch_size: 1024
 	- device: cuda
+	- latent size: 16
 
