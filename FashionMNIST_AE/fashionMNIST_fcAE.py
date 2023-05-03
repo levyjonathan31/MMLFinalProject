@@ -64,30 +64,40 @@ def main():
 class Autoencoder(nn.Module):
     def __init__(self, input_dim=784, latent=8):
         super().__init__()
-        
-        self.enc1 = nn.Linear(in_features=input_dim, out_features=input_dim//2)
-        self.enc2 = nn.Linear(in_features=input_dim//2, out_features=input_dim//4)
-        self.enc3 = nn.Linear(in_features=input_dim//4, out_features=latent)
-        
-        self.dec1 = nn.Linear(in_features=latent, out_features=input_dim//4)
-        self.dec2 = nn.Linear(in_features=input_dim//4, out_features=input_dim//2)
-        self.dec3 = nn.Linear(in_features=input_dim//2, out_features=input_dim)
-    
+
+        transf2_dim = input_dim // 2
+        transf3_dim = input_dim // 4
+
+        self.enc1 = nn.Linear(in_features=input_dim, out_features=transf2_dim)
+        self.enc2 = nn.Linear(in_features=transf2_dim, out_features=transf3_dim)
+        self.enc3 = nn.Linear(in_features=transf3_dim, out_features=latent)
+
+        self.dec1 = nn.Linear(in_features=latent, out_features=transf3_dim)
+        self.dec2 = nn.Linear(in_features=transf3_dim, out_features=transf2_dim)
+        self.dec3 = nn.Linear(in_features=transf2_dim, out_features=input_dim)
+
+        self.encodings = [
+            self.enc1,
+            self.enc2,
+            self.enc3,
+        ]
+
+        self.decodings = [
+            self.dec1,
+            self.dec2,
+            self.dec3,
+        ]
+
     def encode(self, x):
-        x = self.enc1(x)
-        x = nn.LeakyReLU(0.5)(x)
-        x = self.enc2(x)
-        x = nn.LeakyReLU(0.5)(x)
-        x = self.enc3(x)
-        x = nn.LeakyReLU(0.5)(x)
+        for e in self.encodings:
+            x = e(x)
+            x = nn.LeakyReLU(0.5)(x)
         return x
     
-    def decode(self, x):        
-        x = self.dec1(x)
-        x = nn.LeakyReLU(0.5)(x)
-        x = self.dec2(x)
-        x = nn.LeakyReLU(0.5)(x)
-        x = self.dec3(x)
+    def decode(self, x):
+        for d in self.decodings:
+            x = d(x)
+            x = nn.LeakyReLU(0.5)(x)
         return x
 
     def forward(self, x):
