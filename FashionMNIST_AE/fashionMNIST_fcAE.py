@@ -69,7 +69,7 @@ def main():
                 axs[i, j + n].imshow(result[idx].reshape([28, 28]), cmap='gray')
                 axs[i, j + n].axis('off')
     plt.show()
-    least_squares(dataset_cpu, result)
+    least_squares(model, result)
 
 
 def training(model: Autoencoder,
@@ -153,8 +153,18 @@ def shuffle_data(data: Tensor) -> Tensor:
 
 
 def least_squares(model: Autoencoder, dataset: Tensor):
-    for dec in model.decodings:
-        print(dec.shape)
+    b = dataset.T
+    for dec in reversed(model.decodings):
+        A = dec.weight.detach().cpu().numpy()
+        next_input = np.linalg.lstsq(A, b, rcond=1)[0]
+        for i in range(next_input.shape[0]):
+            for j in range(next_input.shape[1]):
+                if next_input[i][j] < 0:
+                    next_input[i][j] /= 0.5
+        b = next_input
+    print(b.shape)
+    print(b)
+
 
 
 def write_diagnostics(model, best_loss, time_taken, comp_ratio, epochs: int, batch_size: int, device: str):
