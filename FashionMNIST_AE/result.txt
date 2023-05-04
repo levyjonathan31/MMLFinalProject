@@ -1,3 +1,12 @@
+02:23:06
+Best Loss: 0.121960 found in 12.584132ms.
+Compression ratio: 46.12%
+Details:
+	- epochs: 100
+	- batch_size: 1024
+	- device: cuda
+	- latent size: 17
+
 02:11:26
 Best Loss: 0.115402 found in 14.006097ms.
 Compression ratio: 24.50%
