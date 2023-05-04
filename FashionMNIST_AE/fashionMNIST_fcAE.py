@@ -22,6 +22,7 @@ def main():
     X_train, y_train = mnist_reader.load_mnist('data/fashion', kind='train')
     X_test, y_test = mnist_reader.load_mnist('data/fashion', kind='t10k')
 
+
     # Normalize Data
     X_std = np.std(X_train)
     X_mean = np.mean(X_train)
@@ -34,6 +35,7 @@ def main():
 
     X_train = np.float32(X_train)
 
+    # Setting up model parameters
     model = Autoencoder()
     model.to(device)
     model_param = model.parameters()
@@ -46,18 +48,21 @@ def main():
     EPOCHS = 1000
     BATCH_SIZE = 2048
 
-    # Training and time-tracking
+    # Training
     start_time = time.time()
     if (do_train):
         best_loss = training(model, dataset_norm, optimizer, criterion, Epochs=EPOCHS, batch_size=BATCH_SIZE,
                              device=device)
+    train_time_taken = time.time() - start_time
 
+
+    # Calculating Result
     with torch.no_grad():
         result = model(dataset.to(device))
         result = result.detach().cpu().numpy() * X_std + X_mean
         dataset_cpu = dataset.detach().cpu().numpy() * X_std + X_mean
 
-    time_taken = time.time() - start_time
+    # Linear Least Squares
     ls_time_start = time.time()
 
     # Tensor declarations
@@ -94,14 +99,14 @@ def main():
     print("Top Layer Difference 2-norm Training: ", np.linalg.norm(top_layer_training - X_train))
     print("Top Layer Difference 2-norm Test: ", np.linalg.norm(top_layer_test - X_test))
 
+    # Calculate the compression ratio and output the diagnostics
     if (do_train):
         comp_ratio = model.compute_compression_ratio(dataset_norm)
-        write_diagnostics(model, best_loss, time_taken, ls_time_taken, comp_ratio, EPOCHS, BATCH_SIZE, device)
+        write_diagnostics(model, best_loss, train_time_taken, ls_time_taken, comp_ratio, EPOCHS, BATCH_SIZE, device)
 
-    # Display test and output side-by-side
-    n = 4  # number of rows/columns in the grid
+    # Display stuff
+    n = 4
     fig, axs = plt.subplots(n, n * 2, figsize=(8, 8))
-
     for i in range(n):
         for j in range(n):
             idx = np.random.randint(60000)
@@ -110,7 +115,7 @@ def main():
                 axs[i, j].axis('off')
                 axs[i, j + n].imshow(ae_test_data[idx].reshape([28, 28]), cmap='gray')
                 axs[i, j + n].axis('off')
-    plt.show()
+plt.show()
 
 
 def training(model: Autoencoder,
@@ -206,8 +211,12 @@ def least_squares(model: Autoencoder, dataset: Tensor):
     return b.T
 
 
-def write_diagnostics(model, best_loss, time_taken, ls_time_taken, comp_ratio, epochs: int, batch_size: int,
-                      device: str):
+
+def nrmse(x, x_recon):
+    return np.sqrt(np.mean((x - x_recon) ** 2)) / (np.max(x) - np.min(x))
+
+def write_diagnostics(model, best_loss, time_taken, ls_time_taken, comp_ratio, epochs: int, batch_size: int, device: str):
+
     with open('result.txt', 'r+') as file:
         # Read the contents and store them
         contents = file.read()
@@ -217,7 +226,7 @@ def write_diagnostics(model, best_loss, time_taken, ls_time_taken, comp_ratio, e
         file.write(time.strftime("%H:%M:%S", time.gmtime()))
         file.write(f"\nBest Loss: {best_loss:.6f} found in {time_taken:.6f}s.")
         file.write(f"\nLeast squares took {ls_time_taken:.6f}s.")
-        file.write(f"\nCompression ratio: {comp_ratio:.2f}%")
+        file.write(f"\nCompression ratio: {comp_ratio:.2f}x")
         file.write("\nDetails:")
         file.write(f"\n\t- epochs: {epochs}")
         file.write(f"\n\t- batch_size: {batch_size}")
