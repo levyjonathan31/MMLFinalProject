@@ -46,15 +46,19 @@ def main():
     # Training and time-tracking
     start_time = time.time()
     best_loss = training(model, dataset_norm, optimizer, criterion, Epochs=EPOCHS, batch_size=BATCH_SIZE, device=device)
-    time_taken = time.time() - start_time
-
-    comp_ratio = model.compute_compression_ratio(dataset_norm)
-    write_diagnostics(model, best_loss, time_taken, comp_ratio, EPOCHS, BATCH_SIZE, device)
 
     with torch.no_grad():
         result = model(dataset.to(device))
         result = result.detach().cpu().numpy() * x_std + x_mean
         dataset_cpu = dataset.detach().cpu().numpy() * x_std + x_mean
+
+    time_taken = time.time() - start_time
+    ls_time_start = time.time()
+    least_squares(model.to(device), torch.from_numpy(result))
+    ls_time_taken = time.time() - ls_time_start
+
+    comp_ratio = model.compute_compression_ratio(dataset_norm)
+    write_diagnostics(model, best_loss, time_taken, ls_time_taken, comp_ratio, EPOCHS, BATCH_SIZE, device)
 
     # Display test and output side-by-side
     n = 4  # number of rows/columns in the grid
@@ -69,7 +73,6 @@ def main():
                 axs[i, j + n].imshow(result[idx].reshape([28, 28]), cmap='gray')
                 axs[i, j + n].axis('off')
     plt.show()
-    least_squares(model, result)
 
 
 def training(model: Autoencoder,
@@ -153,21 +156,20 @@ def shuffle_data(data: Tensor) -> Tensor:
 
 
 def least_squares(model: Autoencoder, dataset: Tensor):
-    b = dataset.T
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    b = dataset.T.to(device)
     for dec in reversed(model.decodings):
-        A = dec.weight.detach().cpu().numpy()
-        next_input = np.linalg.lstsq(A, b, rcond=1)[0]
-        for i in range(next_input.shape[0]):
-            for j in range(next_input.shape[1]):
-                if next_input[i][j] < 0:
-                    next_input[i][j] /= 0.5
+        A = torch.tensor(dec.weight, dtype=torch.float32, device=device)
+        next_input, _, _, _ = torch.linalg.lstsq(A, b)
+        next_input = torch.where(next_input < 0, next_input / 0.5, next_input)
         b = next_input
+
+    b = b.cpu().numpy()
     print(b.shape)
     print(b)
 
 
-
-def write_diagnostics(model, best_loss, time_taken, comp_ratio, epochs: int, batch_size: int, device: str):
+def write_diagnostics(model, best_loss, time_taken, ls_time_taken, comp_ratio, epochs: int, batch_size: int, device: str):
     with open('result.txt', 'r+') as file:
         # Read the contents and store them
         contents = file.read()
@@ -175,7 +177,8 @@ def write_diagnostics(model, best_loss, time_taken, comp_ratio, epochs: int, bat
         # Write what we need at the top of the file
         file.seek(0)
         file.write(time.strftime("%H:%M:%S", time.gmtime()))
-        file.write(f"\nBest Loss: {best_loss:.6f} found in {time_taken:.6f}ms.")
+        file.write(f"\nBest Loss: {best_loss:.6f} found in {time_taken:.6f}s.")
+        file.write(f"\nLeast squares took {ls_time_taken:.6f}s.")
         file.write(f"\nCompression ratio: {comp_ratio:.2f}%")
         file.write("\nDetails:")
         file.write(f"\n\t- epochs: {epochs}")
