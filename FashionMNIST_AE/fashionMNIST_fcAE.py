@@ -22,7 +22,6 @@ def main():
     X_train, y_train = mnist_reader.load_mnist('data/fashion', kind='train')
     X_test, y_test = mnist_reader.load_mnist('data/fashion', kind='t10k')
 
-
     # Normalize Data
     X_std = np.std(X_train)
     X_mean = np.mean(X_train)
@@ -50,11 +49,9 @@ def main():
 
     # Training
     start_time = time.time()
-    if (do_train):
-        best_loss = training(model, dataset_norm, optimizer, criterion, Epochs=EPOCHS, batch_size=BATCH_SIZE,
-                             device=device)
+    if do_train:
+        best_loss = training(model, dataset_norm, optimizer, criterion, Epochs=EPOCHS, batch_size=BATCH_SIZE, device=device)
     train_time_taken = time.time() - start_time
-
 
     # Calculating Result
     with torch.no_grad():
@@ -69,9 +66,10 @@ def main():
     X_train_tensor = torch.tensor(X_train, dtype=torch.float32)
     X_test_tensor = torch.tensor(X_test, dtype=torch.float32)
     state_dict = torch.load('results/latent_39_best_parameters.pt')
-    # Test and Training output
 
+    # Test and Training output
     model.load_state_dict(state_dict)
+
     # Least Squares on the autoencoded data
     # Training data
     ae_training_data: Tensor
@@ -100,7 +98,7 @@ def main():
     print("Top Layer Difference 2-norm Test: ", np.linalg.norm(top_layer_test - X_test))
 
     # Calculate the compression ratio and output the diagnostics
-    if (do_train):
+    if do_train:
         comp_ratio = model.compute_compression_ratio(dataset_norm)
         write_diagnostics(model, best_loss, train_time_taken, ls_time_taken, comp_ratio, EPOCHS, BATCH_SIZE, device)
 
@@ -111,11 +109,11 @@ def main():
         for j in range(n):
             idx = np.random.randint(60000)
             if idx < len(result):
-                axs[i, j].imshow(X_test[idx].reshape([28, 28]), cmap='gray')
+                axs[i, j].imshow(dataset_cpu[idx].reshape([28, 28]), cmap='gray')
                 axs[i, j].axis('off')
                 axs[i, j + n].imshow(ae_test_data[idx].reshape([28, 28]), cmap='gray')
                 axs[i, j + n].axis('off')
-plt.show()
+    plt.show()
 
 
 def training(model: Autoencoder,
