@@ -161,7 +161,7 @@ def least_squares(model: Autoencoder, dataset: Tensor):
     for dec in reversed(model.decodings):
         A = torch.tensor(dec.weight, dtype=torch.float32, device=device)
         next_input, _, _, _ = torch.linalg.lstsq(A, b)
-        next_input = torch.where(next_input < 0, next_input / model.LEAKY_RELU_ALPHA, next_input)
+        next_input = torch.where(next_input < 0, next_input / model.LR_Factor, next_input)
         b = next_input
 
     b = b.cpu().numpy()
