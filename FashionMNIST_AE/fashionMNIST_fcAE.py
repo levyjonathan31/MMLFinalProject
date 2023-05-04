@@ -8,7 +8,7 @@ import torch.nn as nn
 from torch import Tensor
 from torch.optim import Adam
 
-from autoencoder import Autoencoder
+from autoencoder import Autoencoder, LR_FACTOR
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -161,7 +161,7 @@ def least_squares(model: Autoencoder, dataset: Tensor):
     for dec in reversed(model.decodings):
         A = torch.tensor(dec.weight, dtype=torch.float32, device=device)
         next_input, _, _, _ = torch.linalg.lstsq(A, b)
-        next_input = torch.where(next_input < 0, next_input / 0.5, next_input)
+        next_input = torch.where(next_input < 0, next_input / LR_FACTOR, next_input)
         b = next_input
 
     b = b.cpu().numpy()
