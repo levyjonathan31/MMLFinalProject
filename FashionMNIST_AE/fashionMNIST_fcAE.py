@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
+import math
 
 from utils import mnist_reader
 
@@ -20,8 +21,6 @@ def main():
     X_train, y_train = mnist_reader.load_mnist('data/fashion', kind='train')
     X_test, y_test = mnist_reader.load_mnist('data/fashion', kind='t10k')
 
-    find_latent(X_train, X_test)
-
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(device)
 
@@ -33,22 +32,89 @@ def main():
     x_std = np.std(X_train)
     x_mean = np.mean(X_train)
 
-    # Setting up model parameters
-    model = Autoencoder()
-    model.to(device)
-    model_param = model.parameters()
-    optimizer = torch.optim.Adam(filter(lambda x: x.requires_grad, model_param), lr=0.0001)
-    criterion = nn.MSELoss()
-    dataset = torch.from_numpy(X_train).to(device)
-    dataset_norm = (dataset - torch.mean(dataset)) / torch.std(dataset).to(device)
-
     # Training variables
     EPOCHS = 10
     BATCH_SIZE = 1024
+    dataset = torch.from_numpy(X_train).to(device)
+    dataset_norm = (dataset - torch.mean(dataset)) / torch.std(dataset).to(device)
+    criterion = nn.MSELoss()
 
     # Training
     start_time = time.time()
-    best_loss = training(model, dataset_norm, optimizer, criterion, Epochs=EPOCHS, batch_size=BATCH_SIZE, device=device)
+
+    def train_and_latent(run_once: int = None):
+        if run_once:
+            model = Autoencoder(run_once)
+            model.to(device)
+            model_param = model.parameters()
+            optimizer = torch.optim.Adam(filter(lambda x: x.requires_grad, model_param), lr=0.0001)
+            loss = training(model, dataset_norm, optimizer, criterion, Epochs=EPOCHS, batch_size=BATCH_SIZE, device=device)
+            return model, loss
+
+        MIN_LATENT = 35
+        MAX_LATENT = 50
+        STEP_SIZE = 1
+        min_loss = math.inf
+
+        test_compression_ratios = []
+        test_nrmses = []
+        training_compression_ratios = []
+        training_nrmses = []
+        best_model = None
+
+        for l in range(MIN_LATENT, MAX_LATENT, STEP_SIZE):
+            print(f"ITERATION {(l // STEP_SIZE)} OF {(MAX_LATENT-MIN_LATENT) // STEP_SIZE}")
+            # Setting up model parameters
+            train_model = Autoencoder(l)
+            train_model.to(device)
+            model_param = train_model.parameters()
+            optimizer = torch.optim.Adam(filter(lambda x: x.requires_grad, model_param), lr=0.0001)
+
+            loss = training(train_model, dataset_norm, optimizer, criterion, Epochs=EPOCHS, batch_size=BATCH_SIZE, device=device)
+            if loss < min_loss:
+                min_loss = loss
+                best_model = train_model
+
+            state_dict = torch.load(f'./results/latent_{l}_best_parameters.pt')
+            model = Autoencoder(l)
+            model.load_state_dict(state_dict)
+            X_train_tensor = torch.tensor(X_train, dtype=torch.float32)
+            X_test_tensor = torch.tensor(X_test, dtype=torch.float32)
+
+            # Encode the training and test sets
+            with torch.no_grad():
+                encoded_train = model.encode(X_train_tensor).numpy()
+                encoded_test = model.encode(X_test_tensor).numpy()
+
+            # Decode the training and test sets
+            with torch.no_grad():
+                decoded_train = model.decode(torch.tensor(encoded_train, dtype=torch.float32)).numpy()
+                decoded_test = model.decode(torch.tensor(encoded_test, dtype=torch.float32)).numpy()
+
+            nrmse_train = np.sqrt(nrmse(X_train, decoded_train)) / (X_train.max() - X_train.min())
+            nrmse_test = np.sqrt(nrmse(X_test, decoded_test)) / (X_test.max() - X_test.min())
+
+            test_compression_ratios.append(l)
+            test_nrmses.append(nrmse_test)
+            training_compression_ratios.append(l)
+            training_nrmses.append(nrmse_train)
+
+        plt.plot(training_compression_ratios, training_nrmses)
+        plt.title("NRMSE vs Compression Ratio (Training)")
+        plt.ylabel("NRMSE")
+        plt.xlabel("Compression Ratio")
+        plt.show()
+
+        plt.plot(test_compression_ratios, test_nrmses)
+        plt.title("NRMSE vs Compression Ratio (Testing)")
+        plt.ylabel("NRMSE")
+        plt.xlabel("Compression Ratio")
+        plt.show()
+
+        print("BEST LATENT: ", best_model.LATENT_DIM)
+        return best_model, min_loss
+
+    model, best_loss = train_and_latent(39)
     train_time_taken = time.time() - start_time
 
     # Calculating Result
