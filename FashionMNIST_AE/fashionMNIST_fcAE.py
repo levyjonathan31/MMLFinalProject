@@ -20,6 +20,8 @@ def main():
     X_train, y_train = mnist_reader.load_mnist('data/fashion', kind='train')
     X_test, y_test = mnist_reader.load_mnist('data/fashion', kind='t10k')
 
+    find_latent(X_train, X_test)
+
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(device)
 
@@ -31,6 +33,7 @@ def main():
     x_std = np.std(X_train)
     x_mean = np.mean(X_train)
 
+    # Setting up model parameters
     model = Autoencoder()
     model.to(device)
     model_param = model.parameters()
@@ -43,29 +46,30 @@ def main():
     EPOCHS = 10
     BATCH_SIZE = 1024
 
-    # Training and time-tracking
+    # Training
     start_time = time.time()
     best_loss = training(model, dataset_norm, optimizer, criterion, Epochs=EPOCHS, batch_size=BATCH_SIZE, device=device)
+    train_time_taken = time.time() - start_time
 
+    # Calculating Result
     with torch.no_grad():
         result = model(dataset.to(device))
         result = result.detach().cpu().numpy() * x_std + x_mean
         dataset_cpu = dataset.detach().cpu().numpy() * x_std + x_mean
 
-    time_taken = time.time() - start_time
+    # Linear Least Squares
     ls_time_start = time.time()
     least_squares(model.to(device), torch.from_numpy(result))
     ls_time_taken = time.time() - ls_time_start
 
     # Calculate the compression ratio and output the diagnostics
     comp_ratio = model.compute_compression_ratio(dataset_norm)
-    write_diagnostics(model, best_loss, time_taken, ls_time_taken, comp_ratio, EPOCHS, BATCH_SIZE, device)
+    write_diagnostics(model, best_loss, train_time_taken, ls_time_taken, comp_ratio, EPOCHS, BATCH_SIZE, device)
 
-    # Display test and output side-by-side
-    n = 4  # number of rows/columns in the grid
+    # Display stuff
+    n = 4
     fig, axs = plt.subplots(n, n * 2, figsize=(8, 8))
-
-    axs = axs.flat  # flatten the axes array into a 1D array
+    axs = axs.flat
     for ax in axs:
         idx = np.random.randint(60000)
         if idx < len(result):
@@ -169,6 +173,12 @@ def least_squares(model: Autoencoder, dataset: Tensor):
     b = b.cpu().numpy()
     print(b.shape)
     print(b)
+
+
+def nrmse(x, x_recon):
+    return np.sqrt(np.mean((x - x_recon) ** 2)) / (np.max(x) - np.min(x))
+
+
 
 
 def write_diagnostics(model, best_loss, time_taken, ls_time_taken, comp_ratio, epochs: int, batch_size: int, device: str):
