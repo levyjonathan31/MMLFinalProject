@@ -2,3 +2,4 @@
 venv/
 FashionMNIST_AE/results/
 FashionMNIST_AE/result.txt
+FashionMNIST_AE/__pycache__/
