@@ -8,7 +8,7 @@ import torch.nn as nn
 from torch import Tensor
 from torch.optim import Adam
 
-from autoencoder import Autoencoder
+from autoencoder import Autoencoder, LR_FACTOR
 
 import numpy as np
 import matplotlib.pyplot as plt

@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-
+LR_FACTOR = 0.5
 class Autoencoder(nn.Module):
     # Modify dimensions here.
     INPUT_DIM = 784  # Do not modify this
@@ -40,13 +40,13 @@ class Autoencoder(nn.Module):
     def encode(self, x):
         for e in self.encodings:
             x = e(x)
-            x = nn.LeakyReLU(0.5)(x)
+            x = nn.LeakyReLU(LR_FACTOR)(x)
         return x
 
     def decode(self, x):
         for d in self.decodings:
             x = d(x)
-            x = nn.LeakyReLU(0.5)(x)
+            x = nn.LeakyReLU(LR_FACTOR)(x)
         return x
 
     def compute_compression_ratio(self, x) -> float:
