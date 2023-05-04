@@ -7,29 +7,34 @@ class Autoencoder(nn.Module):
     INPUT_DIM = 784  # Do not modify this
     TRANS2_DIM = INPUT_DIM // 2
     TRANS3_DIM = TRANS2_DIM // 2
-    LATENT_DIM = 8
+    TRANS4_DIM = TRANS3_DIM // 4
+    LATENT_DIM = 32
 
     def __init__(self):
         super().__init__()
 
         self.enc1 = nn.Linear(in_features=self.INPUT_DIM, out_features=self.TRANS2_DIM)
         self.enc2 = nn.Linear(in_features=self.TRANS2_DIM, out_features=self.TRANS3_DIM)
-        self.enc3 = nn.Linear(in_features=self.TRANS3_DIM, out_features=self.LATENT_DIM)
+        self.enc3 = nn.Linear(in_features=self.TRANS3_DIM, out_features=self.TRANS4_DIM)
+        self.enc4 = nn.Linear(in_features=self.TRANS4_DIM, out_features=self.LATENT_DIM)
 
-        self.dec1 = nn.Linear(in_features=self.LATENT_DIM, out_features=self.TRANS3_DIM)
-        self.dec2 = nn.Linear(in_features=self.TRANS3_DIM, out_features=self.TRANS2_DIM)
-        self.dec3 = nn.Linear(in_features=self.TRANS2_DIM, out_features=self.INPUT_DIM)
+        self.dec1 = nn.Linear(in_features=self.LATENT_DIM, out_features=self.TRANS4_DIM)
+        self.dec2 = nn.Linear(in_features=self.TRANS4_DIM, out_features=self.TRANS3_DIM)
+        self.dec3 = nn.Linear(in_features=self.TRANS3_DIM, out_features=self.TRANS2_DIM)
+        self.dec4 = nn.Linear(in_features=self.TRANS2_DIM, out_features=self.INPUT_DIM)
 
         self.encodings = [
             self.enc1,
             self.enc2,
             self.enc3,
+            self.enc4,
         ]
 
         self.decodings = [
             self.dec1,
             self.dec2,
             self.dec3,
+            self.dec4,
         ]
 
     def encode(self, x):
