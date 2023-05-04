@@ -56,12 +56,13 @@ def main():
         result = result.detach().cpu().numpy() * x_std + x_mean
         dataset_cpu = dataset.detach().cpu().numpy() * x_std + x_mean
 
+    # Display test and output side-by-side
     n = 4  # number of rows/columns in the grid
     fig, axs = plt.subplots(n, n*2, figsize=(8, 8))
 
     for i in range(n):
         for j in range(n):
-            idx = i * n + j  # index of the current image
+            idx = np.random.randint(60000)
             if idx < len(result):
                 axs[i, j].imshow(dataset_cpu[idx].reshape([28, 28]), cmap='gray')
                 axs[i, j].axis('off')

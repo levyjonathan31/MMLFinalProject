@@ -7,7 +7,7 @@ class Autoencoder(nn.Module):
     INPUT_DIM = 784  # Do not modify this
     TRANS2_DIM = INPUT_DIM // 2
     TRANS3_DIM = TRANS2_DIM // 2
-    LATENT_DIM = 16
+    LATENT_DIM = 8
 
     def __init__(self):
         super().__init__()
