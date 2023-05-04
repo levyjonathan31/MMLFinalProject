@@ -57,6 +57,7 @@ def main():
     least_squares(model.to(device), torch.from_numpy(result))
     ls_time_taken = time.time() - ls_time_start
 
+    # Calculate the compression ratio and output the diagnostics
     comp_ratio = model.compute_compression_ratio(dataset_norm)
     write_diagnostics(model, best_loss, time_taken, ls_time_taken, comp_ratio, EPOCHS, BATCH_SIZE, device)
 
@@ -64,14 +65,15 @@ def main():
     n = 4  # number of rows/columns in the grid
     fig, axs = plt.subplots(n, n * 2, figsize=(8, 8))
 
-    for i in range(n):
-        for j in range(n):
-            idx = np.random.randint(60000)
-            if idx < len(result):
-                axs[i, j].imshow(dataset_cpu[idx].reshape([28, 28]), cmap='gray')
-                axs[i, j].axis('off')
-                axs[i, j + n].imshow(result[idx].reshape([28, 28]), cmap='gray')
-                axs[i, j + n].axis('off')
+    axs = axs.flat  # flatten the axes array into a 1D array
+    for ax in axs:
+        idx = np.random.randint(60000)
+        if idx < len(result):
+            ax.imshow(dataset_cpu[idx].reshape([28, 28]), cmap='gray')
+            ax.axis('off')
+            ax = next(axs)
+            ax.imshow(result[idx].reshape([28, 28]), cmap='gray')
+            ax.axis('off')
     plt.show()
 
 
@@ -179,7 +181,7 @@ def write_diagnostics(model, best_loss, time_taken, ls_time_taken, comp_ratio, e
         file.write(time.strftime("%H:%M:%S", time.gmtime()))
         file.write(f"\nBest Loss: {best_loss:.6f} found in {time_taken:.6f}s.")
         file.write(f"\nLeast squares took {ls_time_taken:.6f}s.")
-        file.write(f"\nCompression ratio: {comp_ratio:.2f}%")
+        file.write(f"\nCompression ratio: {comp_ratio:.2f}x")
         file.write("\nDetails:")
         file.write(f"\n\t- epochs: {epochs}")
         file.write(f"\n\t- batch_size: {batch_size}")
