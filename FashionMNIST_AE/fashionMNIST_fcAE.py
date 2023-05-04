@@ -40,30 +40,33 @@ def main():
     dataset_norm = (dataset-torch.mean(dataset))/torch.std(dataset).to(device)
 
     # Training variables
-    epochs = 100
-    batch_size = 1024
+    EPOCHS = 100
+    BATCH_SIZE = 1024
 
     # Training and time-tracking
     start_time = time.time()
-    best_loss = training(model, dataset_norm, optimizer, criterion,  Epochs=epochs, batch_size=batch_size, device=device)
+    best_loss = training(model, dataset_norm, optimizer, criterion,  Epochs=EPOCHS, batch_size=BATCH_SIZE, device=device)
     time_taken = time.time() - start_time
 
     comp_ratio = model.compute_compression_ratio(dataset_norm)
-    write_diagnostics(model, best_loss, time_taken, comp_ratio, epochs, batch_size, device)
+    write_diagnostics(model, best_loss, time_taken, comp_ratio, EPOCHS, BATCH_SIZE, device)
 
     with torch.no_grad():
         result = model(dataset.to(device))
         result = result.detach().cpu().numpy() * x_std + x_mean
+        dataset_cpu = dataset.detach().cpu().numpy() * x_std + x_mean
 
-    n = 16  # number of rows/columns in the grid
-    fig, axs = plt.subplots(n, n, figsize=(8, 8))
+    n = 4  # number of rows/columns in the grid
+    fig, axs = plt.subplots(n, n*2, figsize=(8, 8))
 
     for i in range(n):
         for j in range(n):
             idx = i * n + j  # index of the current image
             if idx < len(result):
-                axs[i, j].imshow(result[idx].reshape([28, 28]))
+                axs[i, j].imshow(dataset_cpu[idx].reshape([28, 28]), cmap='gray')
                 axs[i, j].axis('off')
+                axs[i, j+n].imshow(result[idx].reshape([28, 28]), cmap='gray')
+                axs[i, j+n].axis('off')
     plt.show()
 
 
