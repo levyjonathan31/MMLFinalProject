@@ -33,14 +33,14 @@ def main():
     print("Running with", device)
 
     X_train = np.float32(X_train)
-
+    X_test = np.float32(X_test)
     # Setting up model parameters
     model = Autoencoder()
     model.to(device)
     model_param = model.parameters()
     optimizer = torch.optim.Adam(filter(lambda x: x.requires_grad, model_param), lr=0.0005)
     criterion = nn.MSELoss()
-    dataset = torch.from_numpy(X_train).to(device)
+    dataset = torch.from_numpy(X_test).to(device)
     dataset_norm = (dataset - torch.mean(dataset)) / torch.std(dataset).to(device)
 
     # Training variables
@@ -107,9 +107,9 @@ def main():
     fig, axs = plt.subplots(n, n * 2, figsize=(8, 8))
     for i in range(n):
         for j in range(n):
-            idx = np.random.randint(60000)
+            idx = np.random.randint(10000)
             if idx < len(result):
-                axs[i, j].imshow(dataset_cpu[idx].reshape([28, 28]), cmap='gray')  # Note: dataset_cpu is pulled from "dataset", which itself is pulled from TRAINING data.
+                axs[i, j].imshow(dataset_cpu[idx].reshape([28, 28]), cmap='gray')
                 axs[i, j].axis('off')
                 axs[i, j + n].imshow(result[idx].reshape([28, 28]), cmap='gray')
                 axs[i, j + n].axis('off')
