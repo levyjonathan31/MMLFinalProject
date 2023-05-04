@@ -37,15 +37,15 @@ def main():
     optimizer = torch.optim.Adam(filter(lambda x: x.requires_grad, model_param), lr=0.0001)
     criterion = nn.MSELoss()
     dataset = torch.from_numpy(X_train).to(device)
-    dataset_norm = (dataset-torch.mean(dataset))/torch.std(dataset).to(device)
+    dataset_norm = (dataset - torch.mean(dataset)) / torch.std(dataset).to(device)
 
     # Training variables
-    EPOCHS = 100
+    EPOCHS = 10
     BATCH_SIZE = 1024
 
     # Training and time-tracking
     start_time = time.time()
-    best_loss = training(model, dataset_norm, optimizer, criterion,  Epochs=EPOCHS, batch_size=BATCH_SIZE, device=device)
+    best_loss = training(model, dataset_norm, optimizer, criterion, Epochs=EPOCHS, batch_size=BATCH_SIZE, device=device)
     time_taken = time.time() - start_time
 
     comp_ratio = model.compute_compression_ratio(dataset_norm)
@@ -58,7 +58,7 @@ def main():
 
     # Display test and output side-by-side
     n = 4  # number of rows/columns in the grid
-    fig, axs = plt.subplots(n, n*2, figsize=(8, 8))
+    fig, axs = plt.subplots(n, n * 2, figsize=(8, 8))
 
     for i in range(n):
         for j in range(n):
@@ -66,9 +66,10 @@ def main():
             if idx < len(result):
                 axs[i, j].imshow(dataset_cpu[idx].reshape([28, 28]), cmap='gray')
                 axs[i, j].axis('off')
-                axs[i, j+n].imshow(result[idx].reshape([28, 28]), cmap='gray')
-                axs[i, j+n].axis('off')
+                axs[i, j + n].imshow(result[idx].reshape([28, 28]), cmap='gray')
+                axs[i, j + n].axis('off')
     plt.show()
+    least_squares(dataset_cpu, result)
 
 
 def training(model: Autoencoder,
@@ -78,7 +79,6 @@ def training(model: Autoencoder,
              Epochs: int,
              batch_size: int = 1000,
              device: str = "cpu"):
-
     """
     Trains the given autoencoder model on the given dataset using the specified optimizer and loss criterion for a specified number of epochs.
 
@@ -100,16 +100,16 @@ def training(model: Autoencoder,
     dataset = shuffle_data(dataset)
 
     data_size = dataset.shape[0]
-    batches = data_size//batch_size
+    batches = data_size // batch_size
 
     for epoch in range(Epochs):
         running_loss = 0.0
 
         for i in range(batches):
-            start = i*batch_size
-            end = min(data_size, start+batch_size)
+            start = i * batch_size
+            end = min(data_size, start + batch_size)
 
-            data = dataset[start:end]   
+            data = dataset[start:end]
 
             optimizer.zero_grad()
             # print(data)
@@ -125,11 +125,11 @@ def training(model: Autoencoder,
         train_loss.append(loss)
 
         if epoch % 20 == 0:
-            print('Epoch {} of {}, Train Loss: {:.6f}'.format(epoch+1, Epochs, running_loss))
+            print('Epoch {} of {}, Train Loss: {:.6f}'.format(epoch + 1, Epochs, running_loss))
 
         if (loss < best_loss) and (epoch % 20 == 0):
             torch.save(model.state_dict(), './results/latent_{}_best_parameters.pt'.format(model.LATENT_DIM))
-            #torch.save(model.state_dict(), './results/AE/v2_{}/model/AE_loge_allplanes_latent{}_best_parameters.pt'.format(timestep, latent_dim))
+            # torch.save(model.state_dict(), './results/AE/v2_{}/model/AE_loge_allplanes_latent{}_best_parameters.pt'.format(timestep, latent_dim))
             best_loss = loss
             print('best loss: ', best_loss)
 
@@ -152,6 +152,11 @@ def shuffle_data(data: Tensor) -> Tensor:
     return new_data
 
 
+def least_squares(model: Autoencoder, dataset: Tensor):
+    for dec in model.decodings:
+        print(dec.shape)
+
+
 def write_diagnostics(model, best_loss, time_taken, comp_ratio, epochs: int, batch_size: int, device: str):
     with open('result.txt', 'r+') as file:
         # Read the contents and store them
@@ -171,5 +176,6 @@ def write_diagnostics(model, best_loss, time_taken, comp_ratio, epochs: int, bat
 
         # Push the stuff that was previously there below the new contents
         file.write(contents)
+
 
 main()
