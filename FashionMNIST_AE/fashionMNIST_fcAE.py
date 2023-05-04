@@ -109,7 +109,7 @@ def main():
         for j in range(n):
             idx = np.random.randint(60000)
             if idx < len(result):
-                axs[i, j].imshow(dataset_cpu[idx].reshape([28, 28]), cmap='gray')
+                axs[i, j].imshow(dataset_cpu[idx].reshape([28, 28]), cmap='gray')  # Note: dataset_cpu is pulled from "dataset", which itself is pulled from TRAINING data.
                 axs[i, j].axis('off')
                 axs[i, j + n].imshow(result[idx].reshape([28, 28]), cmap='gray')
                 axs[i, j + n].axis('off')
