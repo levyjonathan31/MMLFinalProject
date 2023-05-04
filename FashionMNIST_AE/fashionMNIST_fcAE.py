@@ -8,6 +8,8 @@ import torch.nn as nn
 from torch import Tensor
 from torch.optim import Adam
 
+from autoencoder import Autoencoder
+
 import numpy as np
 import matplotlib.pyplot as plt
 import time
@@ -34,90 +36,35 @@ def main():
     model_param = model.parameters()
     optimizer = torch.optim.Adam(filter(lambda x: x.requires_grad, model_param), lr=0.0001)
     criterion = nn.MSELoss()
-    dataset = torch.from_numpy(X_train)
-    dataset_norm = (dataset-torch.mean(dataset))/torch.std(dataset)
+    dataset = torch.from_numpy(X_train).to(device)
+    dataset_norm = (dataset-torch.mean(dataset))/torch.std(dataset).to(device)
 
     # Training variables
     epochs = 100
     batch_size = 1024
 
+    # Training and time-tracking
     start_time = time.time()
     best_loss = training(model, dataset_norm, optimizer, criterion,  Epochs=epochs, batch_size=batch_size, device=device)
     time_taken = time.time() - start_time
 
-    write_diagnostics(model, best_loss, time_taken, epochs, batch_size, device)
+    comp_ratio = model.compute_compression_ratio(dataset_norm)
+    write_diagnostics(model, best_loss, time_taken, comp_ratio, epochs, batch_size, device)
 
     with torch.no_grad():
         result = model(dataset.to(device))
         result = result.detach().cpu().numpy() * x_std + x_mean
 
-    print(len(result))
-    plt.imshow(result[5].reshape([28, 28]))
-    # plt.show()
+    n = 16  # number of rows/columns in the grid
+    fig, axs = plt.subplots(n, n, figsize=(8, 8))
 
-
-class Autoencoder(nn.Module):
-    # Modify dimensions here.
-    INPUT_DIM = 784  # Do not modify this
-    TRANS2_DIM = INPUT_DIM // 2
-    TRANS3_DIM = TRANS2_DIM // 2
-    LATENT_DIM = 8
-
-    def __init__(self):
-        super().__init__()
-
-        self.enc1 = nn.Linear(in_features=self.INPUT_DIM, out_features=self.TRANS2_DIM)
-        self.enc2 = nn.Linear(in_features=self.TRANS2_DIM, out_features=self.TRANS3_DIM)
-        self.enc3 = nn.Linear(in_features=self.TRANS3_DIM, out_features=self.LATENT_DIM)
-
-        self.dec1 = nn.Linear(in_features=self.LATENT_DIM, out_features=self.TRANS3_DIM)
-        self.dec2 = nn.Linear(in_features=self.TRANS3_DIM, out_features=self.TRANS2_DIM)
-        self.dec3 = nn.Linear(in_features=self.TRANS2_DIM, out_features=self.INPUT_DIM)
-
-        self.encodings = [
-            self.enc1,
-            self.enc2,
-            self.enc3,
-        ]
-
-        self.decodings = [
-            self.dec1,
-            self.dec2,
-            self.dec3,
-        ]
-
-    def encode(self, x):
-        for e in self.encodings:
-            x = e(x)
-            x = nn.LeakyReLU(0.5)(x)
-        return x
-    
-    def decode(self, x):
-        for d in self.decodings:
-            x = d(x)
-            x = nn.LeakyReLU(0.5)(x)
-        return x
-
-    def forward(self, x):
-        latent = self.encode(x)
-        recon = self.decode(latent)
-        return recon
-
-
-def shuffle_data(data: Tensor) -> Tensor:
-    """
-    Shuffles the rows of a PyTorch tensor along the first dimension.
-
-    Args:
-    - data: A PyTorch tensor of shape (N, ...), where N is the number of samples.
-
-    Returns:
-    - new_data: A shuffled PyTorch tensor of the same shape as the input tensor.
-    """
-    size = data.shape[0]
-    index = torch.randperm(size)
-    new_data = data[index]
-    return new_data
+    for i in range(n):
+        for j in range(n):
+            idx = i * n + j  # index of the current image
+            if idx < len(result):
+                axs[i, j].imshow(result[idx].reshape([28, 28]))
+                axs[i, j].axis('off')
+    plt.show()
 
 
 def training(model: Autoencoder,
@@ -146,7 +93,7 @@ def training(model: Autoencoder,
 
     train_loss = []
     best_loss = 1e10
-    dataset = shuffle_data(dataset).to(device)
+    dataset = shuffle_data(dataset)
 
     data_size = dataset.shape[0]
     batches = data_size//batch_size
@@ -182,11 +129,26 @@ def training(model: Autoencoder,
             best_loss = loss
             print('best loss: ', best_loss)
 
-
     return best_loss
 
 
-def write_diagnostics(model, best_loss, time_taken, epochs: int, batch_size: int, device: str):
+def shuffle_data(data: Tensor) -> Tensor:
+    """
+    Shuffles the rows of a PyTorch tensor along the first dimension.
+
+    Args:
+    - data: A PyTorch tensor of shape (N, ...), where N is the number of samples.
+
+    Returns:
+    - new_data: A shuffled PyTorch tensor of the same shape as the input tensor.
+    """
+    size = data.shape[0]
+    index = torch.randperm(size)
+    new_data = data[index]
+    return new_data
+
+
+def write_diagnostics(model, best_loss, time_taken, comp_ratio, epochs: int, batch_size: int, device: str):
     with open('result.txt', 'r+') as file:
         # Read the contents and store them
         contents = file.read()
@@ -194,7 +156,9 @@ def write_diagnostics(model, best_loss, time_taken, epochs: int, batch_size: int
         # Write what we need at the top of the file
         file.seek(0)
         file.write(time.strftime("%H:%M:%S", time.gmtime()))
-        file.write(f"\nBest Loss: {best_loss:.6f} found in {time_taken:.6f}ms.\nDetails:")
+        file.write(f"\nBest Loss: {best_loss:.6f} found in {time_taken:.6f}ms.")
+        file.write(f"\nCompression ratio: {comp_ratio:.2f}%")
+        file.write("\nDetails:")
         file.write(f"\n\t- epochs: {epochs}")
         file.write(f"\n\t- batch_size: {batch_size}")
         file.write(f"\n\t- device: {device}")
@@ -203,6 +167,5 @@ def write_diagnostics(model, best_loss, time_taken, epochs: int, batch_size: int
 
         # Push the stuff that was previously there below the new contents
         file.write(contents)
-
 
 main()

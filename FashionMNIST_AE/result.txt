@@ -1,32 +1,225 @@
-23:43:08
-Best Loss: 0.075958 found in 12.727505ms.
-Details:
-	- epochs: 100
-	- batch_size: 1024
-	- device: cuda
-	- latent size: 195
-
-23:42:16
-Best Loss: 0.114072 found in 12.293002ms.
+00:35:22
+Best Loss: 0.114652 found in 11.320001ms.
+Compression ratio: 49.00%
 Details:
 	- epochs: 100
 	- batch_size: 1024
 	- device: cuda
 	- latent size: 16
 
-23:39:03
-Best Loss: 0.114437 found in 12.676000ms.
+00:33:58
+Best Loss: 0.115455 found in 11.292000ms.
+Compression ratio: 49.00%
 Details:
 	- epochs: 100
 	- batch_size: 1024
 	- device: cuda
 	- latent size: 16
 
-23:40:01
-Best Loss: 0.114779 found in 12.724236ms.
+00:32:53
+Best Loss: 0.115310 found in 11.384459ms.
+Compression ratio: 49.00%
 Details:
 	- epochs: 100
 	- batch_size: 1024
 	- device: cuda
 	- latent size: 16
+
+00:32:25
+Best Loss: 0.349943 found in 11.226702ms.
+Compression ratio: 784.00%
+Details:
+	- epochs: 100
+	- batch_size: 1024
+	- device: cuda
+	- latent size: 1
+
+00:31:34
+Best Loss: 0.345147 found in 11.090999ms.
+Compression ratio: 784.00%
+Details:
+	- epochs: 100
+	- batch_size: 1024
+	- device: cuda
+	- latent size: 1
+
+00:30:55
+Best Loss: 0.344601 found in 11.095000ms.
+Compression ratio: 784.00%
+Details:
+	- epochs: 100
+	- batch_size: 1024
+	- device: cuda
+	- latent size: 1
+
+00:28:10
+Best Loss: 0.344886 found in 11.043444ms.
+Compression ratio: 784.00%
+Details:
+	- epochs: 100
+	- batch_size: 1024
+	- device: cuda
+	- latent size: 1
+
+00:27:46
+Best Loss: 0.344385 found in 11.043152ms.
+Compression ratio: 784.00%
+Details:
+	- epochs: 100
+	- batch_size: 1024
+	- device: cuda
+	- latent size: 1
+
+00:24:55
+Best Loss: 0.342161 found in 11.344463ms.
+Compression ratio: 784.00%
+Details:
+	- epochs: 100
+	- batch_size: 1024
+	- device: cuda
+	- latent size: 1
+
+00:23:46
+Best Loss: 0.347532 found in 11.153003ms.
+Compression ratio: 784.00%
+Details:
+	- epochs: 100
+	- batch_size: 1024
+	- device: cuda
+	- latent size: 1
+
+00:22:01
+Best Loss: 0.341314 found in 11.041750ms.
+Compression ratio: 784.00%
+Details:
+	- epochs: 100
+	- batch_size: 1024
+	- device: cuda
+	- latent size: 1
+
+00:21:33
+Best Loss: 0.349749 found in 11.074998ms.
+Compression ratio: 784.00%
+Details:
+	- epochs: 100
+	- batch_size: 1024
+	- device: cuda
+	- latent size: 1
+
+00:21:12
+Best Loss: 0.242506 found in 11.190852ms.
+Compression ratio: 392.00%
+Details:
+	- epochs: 100
+	- batch_size: 1024
+	- device: cuda
+	- latent size: 2
+
+00:20:53
+Best Loss: 0.159473 found in 11.215998ms.
+Compression ratio: 156.80%
+Details:
+	- epochs: 100
+	- batch_size: 1024
+	- device: cuda
+	- latent size: 5
+
+00:20:22
+Best Loss: 0.076293 found in 11.724999ms.
+Compression ratio: 4.00%
+Details:
+	- epochs: 100
+	- batch_size: 1024
+	- device: cuda
+	- latent size: 196
+
+00:20:00
+Best Loss: 0.075450 found in 11.825998ms.
+Compression ratio: 4.00%
+Details:
+	- epochs: 100
+	- batch_size: 1024
+	- device: cuda
+	- latent size: 196
+
+00:19:34
+Best Loss: 0.345209 found in 11.078870ms.
+Compression ratio: 784.00%
+Details:
+	- epochs: 100
+	- batch_size: 1024
+	- device: cuda
+	- latent size: 1
+
+00:19:04
+Best Loss: 0.343915 found in 11.033999ms.
+Compression ratio: 784.00%
+Details:
+	- epochs: 100
+	- batch_size: 1024
+	- device: cuda
+	- latent size: 1
+
+00:17:22
+Best Loss: 0.140574 found in 11.945000ms.
+Compression ratio: 98.00%
+Details:
+	- epochs: 100
+	- batch_size: 1024
+	- device: cuda
+	- latent size: 8
+
+00:15:50
+Best Loss: 0.083548 found in 11.636000ms.
+Compression ratio: 12.250%
+Details:
+	- epochs: 100
+	- batch_size: 1024
+	- device: cuda
+	- latent size: 64
+
+00:13:34
+Best Loss: 0.345781 found in 11.036000ms.
+Compression ratio: 784.000%
+Details:
+	- epochs: 100
+	- batch_size: 1024
+	- device: cuda
+	- latent size: 1
+
+00:12:55
+Best Loss: 0.145304 found in 11.399193ms.
+Compression ratio: 112.000%
+Details:
+	- epochs: 100
+	- batch_size: 1024
+	- device: cuda
+	- latent size: 7
+
+00:11:48
+Best Loss: 0.075499 found in 11.845002ms.
+Compression ratio: 4.000%
+Details:
+	- epochs: 100
+	- batch_size: 1024
+	- device: cuda
+	- latent size: 196
+
+00:10:36
+Best Loss: 0.140150 found in 11.418298ms.
+Compression ratio: 98.000%
+Details:
+	- epochs: 100
+	- batch_size: 1024
+	- device: cuda
+	- latent size: 8
+
+00:07:40
+Best Loss: 0.138987 found in 11.285002ms.
+Compression ratio: 98.000%
+Details:
+	- epochs: 100
+	- batch_size: 1024
+	- device: cuda
+	- latent size: 8
 
