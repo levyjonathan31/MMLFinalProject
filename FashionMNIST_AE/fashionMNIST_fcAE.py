@@ -16,49 +16,87 @@ import time
 
 
 def main():
+    # Run training
+    do_train = False
     # X is images, y is labels
     X_train, y_train = mnist_reader.load_mnist('data/fashion', kind='train')
     X_test, y_test = mnist_reader.load_mnist('data/fashion', kind='t10k')
 
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    print(device)
+    # Normalize Data
+    X_std = np.std(X_train)
+    X_mean = np.mean(X_train)
+    X_train = (X_train - X_mean) / X_std
 
-    print(X_train.shape)
-    print(y_train.shape)
-    print(X_test.shape)
-    print(y_test.shape)
+    X_test = (X_test - X_mean) / X_std
+
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    print("Running with", device)
+
     X_train = np.float32(X_train)
-    x_std = np.std(X_train)
-    x_mean = np.mean(X_train)
 
     model = Autoencoder()
     model.to(device)
     model_param = model.parameters()
-    optimizer = torch.optim.Adam(filter(lambda x: x.requires_grad, model_param), lr=0.0001)
+    optimizer = torch.optim.Adam(filter(lambda x: x.requires_grad, model_param), lr=0.0005)
     criterion = nn.MSELoss()
     dataset = torch.from_numpy(X_train).to(device)
     dataset_norm = (dataset - torch.mean(dataset)) / torch.std(dataset).to(device)
 
     # Training variables
-    EPOCHS = 10
-    BATCH_SIZE = 1024
+    EPOCHS = 1000
+    BATCH_SIZE = 2048
 
     # Training and time-tracking
     start_time = time.time()
-    best_loss = training(model, dataset_norm, optimizer, criterion, Epochs=EPOCHS, batch_size=BATCH_SIZE, device=device)
+    if (do_train):
+        best_loss = training(model, dataset_norm, optimizer, criterion, Epochs=EPOCHS, batch_size=BATCH_SIZE,
+                             device=device)
 
     with torch.no_grad():
         result = model(dataset.to(device))
-        result = result.detach().cpu().numpy() * x_std + x_mean
-        dataset_cpu = dataset.detach().cpu().numpy() * x_std + x_mean
+        result = result.detach().cpu().numpy() * X_std + X_mean
+        dataset_cpu = dataset.detach().cpu().numpy() * X_std + X_mean
 
     time_taken = time.time() - start_time
     ls_time_start = time.time()
-    least_squares(model.to(device), torch.from_numpy(result))
-    ls_time_taken = time.time() - ls_time_start
 
-    comp_ratio = model.compute_compression_ratio(dataset_norm)
-    write_diagnostics(model, best_loss, time_taken, ls_time_taken, comp_ratio, EPOCHS, BATCH_SIZE, device)
+    # Tensor declarations
+    X_train_tensor = torch.tensor(X_train, dtype=torch.float32)
+    X_test_tensor = torch.tensor(X_test, dtype=torch.float32)
+    state_dict = torch.load('results/latent_39_best_parameters.pt')
+    # Test and Training output
+
+    model.load_state_dict(state_dict)
+    # Least Squares on the autoencoded data
+    # Training data
+    ae_training_data: Tensor
+    ae_test_data: Tensor
+    with torch.no_grad():
+        ae_training_data = model.forward(X_train_tensor.to(device))
+        ae_training_latent = model.encode(X_train_tensor.to(device)).detach().cpu().numpy()
+    latent_training = least_squares(model.to(device), ae_training_data).detach().cpu().numpy()
+    # Test data
+    with torch.no_grad():
+        ae_test_data = model.forward(X_test_tensor.to(device))
+        ae_test_latent = model.encode(X_test_tensor.to(device)).detach().cpu().numpy()
+    latent_test = least_squares(model.to(device), ae_test_data).detach().cpu().numpy()
+    print("Latent Space Difference 2-norm Training: ", np.linalg.norm(latent_training - ae_training_latent))
+    print("Latent Space Difference 2-norm Testing: ", np.linalg.norm(latent_test - ae_test_latent))
+
+    # Least squares on the original data
+    # Training data
+    latent_training = least_squares(model.to(device), X_train_tensor.to(device))
+    # Test data
+    latent_test = least_squares(model.to(device), X_test_tensor.to(device))
+    ls_time_taken = time.time() - ls_time_start
+    top_layer_training = model.decode(latent_training.to(device)).detach().cpu().numpy()
+    top_layer_test = model.decode(latent_test.to(device)).detach().cpu().numpy()
+    print("Top Layer Difference 2-norm Training: ", np.linalg.norm(top_layer_training - X_train))
+    print("Top Layer Difference 2-norm Test: ", np.linalg.norm(top_layer_test - X_test))
+
+    if (do_train):
+        comp_ratio = model.compute_compression_ratio(dataset_norm)
+        write_diagnostics(model, best_loss, time_taken, ls_time_taken, comp_ratio, EPOCHS, BATCH_SIZE, device)
 
     # Display test and output side-by-side
     n = 4  # number of rows/columns in the grid
@@ -68,9 +106,9 @@ def main():
         for j in range(n):
             idx = np.random.randint(60000)
             if idx < len(result):
-                axs[i, j].imshow(dataset_cpu[idx].reshape([28, 28]), cmap='gray')
+                axs[i, j].imshow(X_test[idx].reshape([28, 28]), cmap='gray')
                 axs[i, j].axis('off')
-                axs[i, j + n].imshow(result[idx].reshape([28, 28]), cmap='gray')
+                axs[i, j + n].imshow(ae_test_data[idx].reshape([28, 28]), cmap='gray')
                 axs[i, j + n].axis('off')
     plt.show()
 
@@ -158,18 +196,18 @@ def shuffle_data(data: Tensor) -> Tensor:
 def least_squares(model: Autoencoder, dataset: Tensor):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     b = dataset.T.to(device)
+
     for dec in reversed(model.decodings):
         A = torch.tensor(dec.weight, dtype=torch.float32, device=device)
         next_input, _, _, _ = torch.linalg.lstsq(A, b)
         next_input = torch.where(next_input < 0, next_input / model.LR_FACTOR, next_input)
         b = next_input
 
-    b = b.cpu().numpy()
-    print(b.shape)
-    print(b)
+    return b.T
 
 
-def write_diagnostics(model, best_loss, time_taken, ls_time_taken, comp_ratio, epochs: int, batch_size: int, device: str):
+def write_diagnostics(model, best_loss, time_taken, ls_time_taken, comp_ratio, epochs: int, batch_size: int,
+                      device: str):
     with open('result.txt', 'r+') as file:
         # Read the contents and store them
         contents = file.read()
