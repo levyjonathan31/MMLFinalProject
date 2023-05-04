@@ -53,6 +53,10 @@ def main():
         best_loss = training(model, dataset_norm, optimizer, criterion, Epochs=EPOCHS, batch_size=BATCH_SIZE, device=device)
     train_time_taken = time.time() - start_time
 
+    # Test and Training output
+    state_dict = torch.load('results/latent_39_best_parameters.pt')
+    model.load_state_dict(state_dict)
+
     # Calculating Result
     with torch.no_grad():
         result = model(dataset.to(device))
@@ -65,10 +69,6 @@ def main():
     # Tensor declarations
     X_train_tensor = torch.tensor(X_train, dtype=torch.float32)
     X_test_tensor = torch.tensor(X_test, dtype=torch.float32)
-    state_dict = torch.load('results/latent_39_best_parameters.pt')
-
-    # Test and Training output
-    model.load_state_dict(state_dict)
 
     # Least Squares on the autoencoded data
     # Training data
