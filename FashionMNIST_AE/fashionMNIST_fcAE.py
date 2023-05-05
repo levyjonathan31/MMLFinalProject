@@ -114,7 +114,7 @@ def main():
         print("BEST LATENT: ", best_model.LATENT_DIM)
         return best_model, min_loss
 
-    model, best_loss = train_and_latent(39)
+    model, best_loss = train_and_latent()
     train_time_taken = time.time() - start_time
 
     # Calculating Result
@@ -242,8 +242,7 @@ def least_squares(model: Autoencoder, dataset: Tensor):
 
 
 def nrmse(x, x_recon):
-    return np.sqrt(np.mean((x - x_recon) ** 2)) / (np.max(x) - np.min(x))
-
+    return np.sqrt(np.sum(np.linalg.norm(x - x_recon, axis=1) ** 2) / x.shape[0]) / (np.max(x) - np.min(x))
 
 
 
