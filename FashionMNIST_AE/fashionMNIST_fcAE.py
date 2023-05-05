@@ -214,7 +214,7 @@ def least_squares(model: Autoencoder, dataset: Tensor):
         next_input = torch.where(next_input < 0, next_input / model.LR_FACTOR, next_input)
         i -= 1
         print("Decoding Layer ", i)
-        print(b[0])
+        print(b)
         b = next_input
     print("----------------------------------------")
     return b.T
