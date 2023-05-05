@@ -21,7 +21,6 @@ def main():
     # X is images, y is labels
     X_train, y_train = mnist_reader.load_mnist('data/fashion', kind='train')
     X_test, y_test = mnist_reader.load_mnist('data/fashion', kind='t10k')
-
     # Normalize Data
     X_std = np.std(X_train)
     X_mean = np.mean(X_train)
@@ -103,6 +102,9 @@ def main():
     print("Top Layer Difference 2-norm Training: ", np.linalg.norm(top_layer_training - X_train)/60000)
     print("Top Layer Difference 2-norm Test: ", np.linalg.norm(top_layer_test - X_test)/10000)
 
+    # Compression Ratio vs Normalized Root Mean Squared Error
+    print(nrmse(top_layer_training, X_train))
+    print(nrmse(top_layer_test, X_test))
     # Calculate the compression ratio and output the diagnostics
     if do_train:
         comp_ratio = model.compute_compression_ratio(dataset_norm)
@@ -222,7 +224,7 @@ def least_squares(model: Autoencoder, dataset: Tensor):
 
 
 def nrmse(x, x_recon):
-    return np.sqrt(np.mean((x - x_recon) ** 2)) / (np.max(x) - np.min(x))
+    return np.sqrt(np.sum(np.linalg.norm(x - x_recon, axis=1)**2)/ x.shape[0]) / (np.max(x) - np.min(x))
 
 def write_diagnostics(model, best_loss, time_taken, ls_time_taken, comp_ratio, epochs: int, batch_size: int, device: str):
 
