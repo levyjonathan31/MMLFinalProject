@@ -8,12 +8,12 @@ class Autoencoder(nn.Module):
     TRANS2_DIM = INPUT_DIM // 2
     TRANS3_DIM = TRANS2_DIM // 2
     TRANS4_DIM = TRANS3_DIM // 2
-    LATENT_DIM = 39
+    LATENT_DIM = 128
     LR_FACTOR = 0.5
 
-    def __init__(self):
+    def __init__(self, latent_dim=LATENT_DIM):
         super().__init__()
-
+        self.LATENT_DIM = latent_dim
         self.enc1 = nn.Linear(in_features=self.INPUT_DIM, out_features=self.TRANS2_DIM)
         self.enc2 = nn.Linear(in_features=self.TRANS2_DIM, out_features=self.TRANS3_DIM)
         self.enc3 = nn.Linear(in_features=self.TRANS3_DIM, out_features=self.TRANS4_DIM)

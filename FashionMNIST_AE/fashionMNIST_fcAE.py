@@ -34,7 +34,7 @@ def main():
     X_train = np.float32(X_train)
     X_test = np.float32(X_test)
     # Setting up model parameters
-    model = Autoencoder()
+    model = Autoencoder(39)
     model.to(device)
     model_param = model.parameters()
     optimizer = torch.optim.Adam(filter(lambda x: x.requires_grad, model_param), lr=0.0005)
@@ -43,7 +43,7 @@ def main():
     dataset_norm = (dataset - torch.mean(dataset)) / torch.std(dataset).to(device)
 
     # Training variables
-    EPOCHS = 1000
+    EPOCHS = 200
     BATCH_SIZE = 2048
 
     # Training
@@ -103,8 +103,58 @@ def main():
     print("Top Layer Difference 2-norm Test: ", np.linalg.norm(top_layer_test - X_test)/10000)
 
     # Compression Ratio vs Normalized Root Mean Squared Error
-    print(nrmse(top_layer_training, X_train))
-    print(nrmse(top_layer_test, X_test))
+    compression_ratios = [784/latent_size for latent_size in range(8, 129, 8)]
+    # Training normalized root mean squared error values Computed
+    training_nrmse_c = []
+    # Test normalized root mean squared error values Computed
+    test_nrmse_c = []
+
+    # Training normalized root mean squared error values Discovered
+    training_nrmse_d = []
+    # Test normalized root mean squared error values Discovered
+    test_nrmse_d = []
+    print("Computing Compression Ratio vs. NRMSE. Please wait...")
+    for i in range(8, 129, 8):
+        state_dict = torch.load(f'./results/latent_{i}_best_parameters.pt')
+        model = Autoencoder(i)
+        model.load_state_dict(state_dict)
+        # Computed
+        latent_training = least_squares(model.to(device), X_train_tensor.to(device), False)
+        latent_test = least_squares(model.to(device), X_test_tensor.to(device), False)
+        top_layer_training = model.decode(latent_training.to(device)).detach().cpu().numpy()
+        top_layer_test = model.decode(latent_test.to(device)).detach().cpu().numpy()
+        # Discovered
+        with torch.no_grad():
+            ae_training_data = model.forward(X_train_tensor.to(device))
+            ae_test_data = model.forward(X_test_tensor.to(device))
+            training_nrmse_c.append(nrmse(X_train, top_layer_training))
+            test_nrmse_c.append(nrmse(X_test, top_layer_test))
+            training_nrmse_d.append(nrmse(X_train, ae_training_data.detach().cpu().numpy()))
+            test_nrmse_d.append(nrmse(X_test, ae_test_data.detach().cpu().numpy()))
+    # plot compression ratio vs nrmse
+    plt.plot(compression_ratios, training_nrmse_c, label='Training Computed')
+    # make a label on top
+    plt.title('Compression Ratio vs. NRMSE Training Computed')
+    plt.xlabel('Compression Ratio')
+    plt.ylabel('Normalized Root Mean Squared Error')
+    plt.show()
+    plt.title('Compression Ratio vs. NRMSE Test Computed')
+    plt.plot(compression_ratios, test_nrmse_c, label='Test Computed')
+    plt.xlabel('Compression Ratio')
+    plt.ylabel('Normalized Root Mean Squared Error')
+    plt.show()
+    plt.title('Compression Ratio vs. NRMSE Training Discovered')
+    plt.plot(compression_ratios, training_nrmse_d, label='Training Discovered')
+    plt.xlabel('Compression Ratio')
+    plt.ylabel('Normalized Root Mean Squared Error')
+    plt.show()
+    plt.title('Compression Ratio vs. NRMSE Test Discovered')
+    plt.plot(compression_ratios, test_nrmse_d, label='Test Discovered')
+    plt.xlabel('Compression Ratio')
+    plt.ylabel('Normalized Root Mean Squared Error')
+    plt.show()
+    model = Autoencoder(39)
+    model.load_state_dict(torch.load('./results/latent_39_best_parameters.pt'))
     # Calculate the compression ratio and output the diagnostics
     if do_train:
         comp_ratio = model.compute_compression_ratio(dataset_norm)
@@ -204,21 +254,25 @@ def shuffle_data(data: Tensor) -> Tensor:
     return new_data
 
 
-def least_squares(model: Autoencoder, dataset: Tensor):
+def least_squares(model: Autoencoder, dataset: Tensor, do_print : bool = True):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     b = dataset.T.to(device)
     i = 4
-    print("Least squares layers")
-    print("----------------------------------------")
+    if do_print:
+        print("Least squares layers")
+        print("----------------------------------------")
     for dec in reversed(model.decodings):
         A = torch.tensor(dec.weight, dtype=torch.float32, device=device)
         next_input, _, _, _ = torch.linalg.lstsq(A, b)
         next_input = torch.where(next_input < 0, next_input / model.LR_FACTOR, next_input)
-        print("Decoding Layer ", i, " input:")
+        if do_print:
+            print("Decoding Layer ", i, " input:")
         i -= 1
-        print(next_input)
+        if do_print:
+            print(next_input)
         b = next_input
-    print("----------------------------------------")
+    if do_print:
+        print("----------------------------------------")
     return b.T
 
 
