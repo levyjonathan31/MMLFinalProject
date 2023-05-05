@@ -83,8 +83,8 @@ def main():
         ae_test_data = model.forward(X_test_tensor.to(device))
         ae_test_latent = model.encode(X_test_tensor.to(device)).detach().cpu().numpy()
     latent_test = least_squares(model.to(device), ae_test_data).detach().cpu().numpy()
-    print("Latent Space Difference 2-norm Training: ", np.linalg.norm(latent_training - ae_training_latent))
-    print("Latent Space Difference 2-norm Testing: ", np.linalg.norm(latent_test - ae_test_latent))
+    print("Latent Space Difference 2-norm Training: ", np.linalg.norm(latent_training - ae_training_latent)/60000)
+    print("Latent Space Difference 2-norm Testing: ", np.linalg.norm(latent_test - ae_test_latent)/10000)
 
     # Least squares on the original data
     # Training data
@@ -94,8 +94,8 @@ def main():
     ls_time_taken = time.time() - ls_time_start
     top_layer_training = model.decode(latent_training.to(device)).detach().cpu().numpy()
     top_layer_test = model.decode(latent_test.to(device)).detach().cpu().numpy()
-    print("Top Layer Difference 2-norm Training: ", np.linalg.norm(top_layer_training - X_train))
-    print("Top Layer Difference 2-norm Test: ", np.linalg.norm(top_layer_test - X_test))
+    print("Top Layer Difference 2-norm Training: ", np.linalg.norm(top_layer_training - X_train)/60000)
+    print("Top Layer Difference 2-norm Test: ", np.linalg.norm(top_layer_test - X_test)/10000)
 
     # Calculate the compression ratio and output the diagnostics
     if do_train:
