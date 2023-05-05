@@ -83,9 +83,11 @@ def main():
         ae_test_data = model.forward(X_test_tensor.to(device))
         ae_test_latent = model.encode(X_test_tensor.to(device)).detach().cpu().numpy()
     latent_test = least_squares(model.to(device), ae_test_data).detach().cpu().numpy()
+    print("Least Squares on Decoder")
+    print("----------------------------------------")
     print("Latent Space Difference 2-norm Training: ", np.linalg.norm(latent_training - ae_training_latent)/60000)
     print("Latent Space Difference 2-norm Testing: ", np.linalg.norm(latent_test - ae_test_latent)/10000)
-
+    print("\n")
     # Least squares on the original data
     # Training data
     latent_training = least_squares(model.to(device), X_train_tensor.to(device))
@@ -94,6 +96,10 @@ def main():
     ls_time_taken = time.time() - ls_time_start
     top_layer_training = model.decode(latent_training.to(device)).detach().cpu().numpy()
     top_layer_test = model.decode(latent_test.to(device)).detach().cpu().numpy()
+    print("Least Squares on true instances in the decoder")
+    print("----------------------------------------")
+    print("Latent Space Difference 2-norm Training: ", np.linalg.norm(latent_training.detach().cpu().numpy() - ae_training_latent)/60000)
+    print("Latent Space Difference 2-norm Testing: ", np.linalg.norm(latent_test.detach().cpu().numpy() - ae_test_latent)/10000)
     print("Top Layer Difference 2-norm Training: ", np.linalg.norm(top_layer_training - X_train)/60000)
     print("Top Layer Difference 2-norm Test: ", np.linalg.norm(top_layer_test - X_test)/10000)
 
