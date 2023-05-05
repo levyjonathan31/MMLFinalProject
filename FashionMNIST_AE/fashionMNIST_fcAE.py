@@ -212,8 +212,8 @@ def least_squares(model: Autoencoder, dataset: Tensor):
         A = torch.tensor(dec.weight, dtype=torch.float32, device=device)
         next_input, _, _, _ = torch.linalg.lstsq(A, b)
         next_input = torch.where(next_input < 0, next_input / model.LR_FACTOR, next_input)
+        print("Decoding Layer ", i, " input:")
         i -= 1
-        print("Decoding Layer ", i)
         print(next_input)
         b = next_input
     print("----------------------------------------")
