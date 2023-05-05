@@ -205,13 +205,18 @@ def shuffle_data(data: Tensor) -> Tensor:
 def least_squares(model: Autoencoder, dataset: Tensor):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     b = dataset.T.to(device)
-
+    i = 4
+    print("Least squares layers")
+    print("----------------------------------------")
     for dec in reversed(model.decodings):
         A = torch.tensor(dec.weight, dtype=torch.float32, device=device)
         next_input, _, _, _ = torch.linalg.lstsq(A, b)
         next_input = torch.where(next_input < 0, next_input / model.LR_FACTOR, next_input)
+        i -= 1
+        print("Decoding Layer ", i)
+        print(b[0])
         b = next_input
-
+    print("----------------------------------------")
     return b.T
 
 
